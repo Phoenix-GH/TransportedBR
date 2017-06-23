@@ -15,6 +15,7 @@ namespace LoginPattern
 
         public List<Model> Items { get; private set; }
 		public List<Menu> menuItems { get; private set; }
+
 		public RestService ()
 		{
 			//var authData = string.Format("{0}:{1}", Constants.Username, Constants.Password);
@@ -32,6 +33,7 @@ namespace LoginPattern
 			try
 			{
 				var json = JsonConvert.SerializeObject(user);
+
 				var content = new StringContent(json, Encoding.UTF8, "application/json");
 				HttpResponseMessage response = null;
 				response = await client.PostAsync(uri, content);		
@@ -69,6 +71,30 @@ namespace LoginPattern
 				Debug.WriteLine (@"				ERROR {0}", ex.Message);
 			}
 			return menuItems;
+		}
+
+		public async Task<IEnumerable<Config>> getConfig()
+		{
+			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+			var configItems = new List<Config>();
+			var uri = new Uri(Constants.RestUrl + "baseconfig");
+
+			try
+			{
+				var response = await client.GetAsync(uri);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = await response.Content.ReadAsStringAsync();
+					configItems = JsonConvert.DeserializeObject<List<Config>>(content);
+					Debug.WriteLine(configItems);
+				}
+
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(@"				ERROR {0}", ex.Message);
+			}
+			return configItems;
 		}
 
 		public async Task<Dictionary<string,Object>> getModels(string model)
@@ -119,34 +145,30 @@ namespace LoginPattern
 			return models;
 		}
 
-		public async Task<Dictionary<string, Object>> postModels(string model, Object postData)
+		public async Task<IEnumerable<Dictionary<string, Object>>> postModels(string model, string json)
 		{
-			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
-
 			var uri = new Uri(Constants.RestUrl + model);
-			//Debug.WriteLine(postData.Keys.ToString());
-			//try
-			//{
-			//	var json = JsonConvert.SerializeObject(postData);
-			//	var content = new StringContent(json, Encoding.UTF8, "application/json");
-			//	HttpResponseMessage response = null;
+			try
+			{
+				var content = new StringContent(json, Encoding.UTF8, "application/json");
+				HttpResponseMessage response = null;
+				response = await client.PostAsync(uri, content);
+				//Debug.WriteLine(response.Content);
+				if (response.IsSuccessStatusCode)
+				{
+					var result = await response.Content.ReadAsStringAsync();
+					Debug.WriteLine(result);
+					var formattedResult = JsonConvert.DeserializeObject<List<Dictionary<string,Object>>>(result);
+					return formattedResult;
+				}
 
-			//	response = await client.PostAsync(uri, content);		
-			//	if (response.IsSuccessStatusCode)
-			//	{
-			//		var result = await response.Content.ReadAsStringAsync();
-			//		Debug.WriteLine(result);
-			//		Dictionary<string, Object> formattedResult = JsonConvert.DeserializeObject<Dictionary<string,Object>>(result);
-			//		return formattedResult;
-			//	}
-
-			//}
-			//catch (Exception ex)
-			//{
-			//	Debug.WriteLine(@"             ERROR {0}", ex.Message);
-			//}
-			return null;
 			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(@"             ERROR {0}", ex.Message);
+			}
+			return null;
+		}
 
 	}
 }

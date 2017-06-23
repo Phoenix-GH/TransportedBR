@@ -84,8 +84,9 @@ namespace LoginPattern
 
 		async void BtnSend_Clicked(object sender, EventArgs e)
 		{
-			Debug.WriteLine(models.Keys.ToString());
-			await restService.postModels(modelId, models);
+			var json = JsonConvert.SerializeObject(models);
+			Debug.WriteLine(json);
+			await restService.postModels(modelId, json);
 		}
 	}
 }
