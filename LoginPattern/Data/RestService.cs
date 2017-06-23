@@ -25,65 +25,6 @@ namespace LoginPattern
 			client.MaxResponseContentBufferSize = 2560000;
 		}
 
-		public async Task<List<Model>> RefreshDataAsync ()
-		{
-			Items = new List<Model> ();
-			var uri = new Uri (string.Format (Constants.RestUrl, string.Empty));
-
-			try {
-				var response = await client.GetAsync (uri);
-				if (response.IsSuccessStatusCode) {
-					var content = await response.Content.ReadAsStringAsync ();
-                    Items = JsonConvert.DeserializeObject <List<Model>> (content);
-				}
-			} catch (Exception ex) {
-				Debug.WriteLine (@"				ERROR {0}", ex.Message);
-			}
-
-			return Items;
-		}
-
-		public async Task SaveTodoItemAsync (Model item, bool isNewItem = false)
-		{
-			var uri = new Uri (string.Format (Constants.RestUrl, item.ID));
-
-			try {
-				var json = JsonConvert.SerializeObject (item);
-				var content = new StringContent (json, Encoding.UTF8, "application/json");
-
-				HttpResponseMessage response = null;
-				if (isNewItem) {
-					response = await client.PostAsync (uri, content);
-				} else {
-					response = await client.PutAsync (uri, content);
-				}
-				
-				if (response.IsSuccessStatusCode) {
-					Debug.WriteLine (@"				TodoItem successfully saved.");
-				}
-				
-			} catch (Exception ex) {
-				Debug.WriteLine (@"				ERROR {0}", ex.Message);
-			}
-		}
-
-		public async Task DeleteTodoItemAsync (string id)
-		{
-			// RestUrl = http://developer.xamarin.com:8081/api/todoitems{0}
-			var uri = new Uri (string.Format (Constants.RestUrl, id));
-
-			try {
-				var response = await client.DeleteAsync (uri);
-
-				if (response.IsSuccessStatusCode) {
-					Debug.WriteLine (@"				TodoItem successfully deleted.");	
-				}
-				
-			} catch (Exception ex) {
-				Debug.WriteLine (@"				ERROR {0}", ex.Message);
-			}
-		}
-
 		public async Task<User> Login(Login user)
 		{
 			Items = new List<Model>();
@@ -92,11 +33,8 @@ namespace LoginPattern
 			{
 				var json = JsonConvert.SerializeObject(user);
 				var content = new StringContent(json, Encoding.UTF8, "application/json");
-
 				HttpResponseMessage response = null;
-			
-				response = await client.PostAsync(uri, content);
-				
+				response = await client.PostAsync(uri, content);		
 				if (response.IsSuccessStatusCode)
 				{
 					var result = await response.Content.ReadAsStringAsync ();
@@ -121,8 +59,6 @@ namespace LoginPattern
 
 			try {
 				var response = await client.GetAsync(uri);
-
-				//Debug.WriteLine(response);
 				if (response.IsSuccessStatusCode) {
 					var content = await response.Content.ReadAsStringAsync();
 					menuItems = JsonConvert.DeserializeObject<List<Menu>> (content);
@@ -135,19 +71,20 @@ namespace LoginPattern
 			return menuItems;
 		}
 
-		public async Task<List<string>> getModels(string model)
+		public async Task<Dictionary<string,Object>> getModels(string model)
 		{
 			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
-			var models = new List<string>();
+			var models = new Dictionary<string, Object>();
 			var uri = new Uri(Constants.RestUrl + model);
 
 			try {
 				var response = await client.GetAsync(uri);
 
-				//Debug.WriteLine(response);
 				if (response.IsSuccessStatusCode) {
 					var content = await response.Content.ReadAsStringAsync();
-					models = JsonConvert.DeserializeObject<List<string>> (content);
+
+					var objects = JsonConvert.DeserializeObject<List<Object>> (content);
+					models = JsonConvert.DeserializeObject<Dictionary<string, Object>> (objects[0].ToString());
 					Debug.WriteLine(models);
 				}
 
@@ -156,5 +93,60 @@ namespace LoginPattern
 			}
 			return models;
 		}
+
+		public async Task<Dictionary<string, Object>> getModelInfo(string model)
+		{
+			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+			var models = new Dictionary<string, Object>();
+			var uri = new Uri(Constants.RestUrl + "base/modelinfo?model=" + model);
+
+			try
+			{
+				var response = await client.GetAsync(uri);
+
+				if (response.IsSuccessStatusCode)
+				{
+					var content = await response.Content.ReadAsStringAsync();
+					models = JsonConvert.DeserializeObject<Dictionary<string, Object>>(content);
+					Debug.WriteLine(models);
+				}
+
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(@"				ERROR {0}", ex.Message);
+			}
+			return models;
+		}
+
+		public async Task<Dictionary<string, Object>> postModels(string model, Object postData)
+		{
+			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+
+			var uri = new Uri(Constants.RestUrl + model);
+			//Debug.WriteLine(postData.Keys.ToString());
+			//try
+			//{
+			//	var json = JsonConvert.SerializeObject(postData);
+			//	var content = new StringContent(json, Encoding.UTF8, "application/json");
+			//	HttpResponseMessage response = null;
+
+			//	response = await client.PostAsync(uri, content);		
+			//	if (response.IsSuccessStatusCode)
+			//	{
+			//		var result = await response.Content.ReadAsStringAsync();
+			//		Debug.WriteLine(result);
+			//		Dictionary<string, Object> formattedResult = JsonConvert.DeserializeObject<Dictionary<string,Object>>(result);
+			//		return formattedResult;
+			//	}
+
+			//}
+			//catch (Exception ex)
+			//{
+			//	Debug.WriteLine(@"             ERROR {0}", ex.Message);
+			//}
+			return null;
+			}
+
 	}
 }
