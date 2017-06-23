@@ -8,7 +8,7 @@ namespace LoginPattern
 	{
 		public MainPage ()
 		{
-			Master = new MenuPage ();
+			Master = new MenuPage (this);
 			Detail = new DetailPage ();
 		}
 	}

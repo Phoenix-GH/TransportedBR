@@ -23,15 +23,6 @@ namespace LoginPattern
 			client = new HttpClient ();
 			client.BaseAddress = new Uri(Constants.RestUrl);
 			client.MaxResponseContentBufferSize = 2560000;
-
-			//client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "http://developer.github.com/v3/#user-agent-required");
-string _ContentType = "application/json";
-			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(_ContentType));
-			client.DefaultRequestHeaders.Add("Access-Control-Allow-Methods", "GET");
-			client.DefaultRequestHeaders.Add("Access-Control-Allow-Headers", "*");
-			//client.DefaultRequestHeaders.Add("Accept", "application/*+xml;version=5.1");
-			
-            //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeaderValue);
 		}
 
 		public async Task<List<Model>> RefreshDataAsync ()
@@ -110,7 +101,8 @@ string _ContentType = "application/json";
 				{
 					var result = await response.Content.ReadAsStringAsync ();
 					Debug.WriteLine(result);
-					return JsonConvert.DeserializeObject<User>(result);
+					App.user = JsonConvert.DeserializeObject<User>(result);
+					return App.user;
 				}
 
 			}
@@ -123,23 +115,46 @@ string _ContentType = "application/json";
 
 		public async Task<IEnumerable<Menu>> getMenu()
 		{
+			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
 			menuItems = new List<Menu>();
 			var uri = new Uri(Constants.RestUrl + "menu");
 
 			try {
 				var response = await client.GetAsync(uri);
 
-				Debug.WriteLine(response);
-				//if (response.IsSuccessStatusCode) {
-				//	var content = await response.Content.ReadAsStringAsync();
-				//	menuItems = JsonConvert.DeserializeObject<List<Menu>> (content);
-				//	Debug.WriteLine(menuItems);
-				//}
+				//Debug.WriteLine(response);
+				if (response.IsSuccessStatusCode) {
+					var content = await response.Content.ReadAsStringAsync();
+					menuItems = JsonConvert.DeserializeObject<List<Menu>> (content);
+					Debug.WriteLine(menuItems);
+				}
 
 			} catch (Exception ex) {
 				Debug.WriteLine (@"				ERROR {0}", ex.Message);
 			}
 			return menuItems;
 		}
-    }
+
+		public async Task<List<string>> getModels(string model)
+		{
+			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+			var models = new List<string>();
+			var uri = new Uri(Constants.RestUrl + model);
+
+			try {
+				var response = await client.GetAsync(uri);
+
+				//Debug.WriteLine(response);
+				if (response.IsSuccessStatusCode) {
+					var content = await response.Content.ReadAsStringAsync();
+					models = JsonConvert.DeserializeObject<List<string>> (content);
+					Debug.WriteLine(models);
+				}
+
+			} catch (Exception ex) {
+				Debug.WriteLine (@"				ERROR {0}", ex.Message);
+			}
+			return models;
+		}
+	}
 }

@@ -23,6 +23,7 @@ namespace LoginPattern
 					if (result != null)
 					{
 						App.Current.Properties["IsLoggedIn"] = true;
+						App.user = result;
 						ilm.ShowMainPage();
 					}
 					else
@@ -31,19 +32,19 @@ namespace LoginPattern
 					}
 				}
 			};
-			var create = new Button { Text = "Create Account" };
+			var create = new Button { Text = "Create Account" ,BackgroundColor=Color.Transparent};
 			create.Clicked += (sender, e) => {
 				MessagingCenter.Send<ContentPage> (this, "Create");
 			};
 
-			var forget = new Button { Text = "Forgot Password" };
+			var forget = new Button { Text = "Forgot Password",BackgroundColor=Color.Transparent};
 			forget.Clicked += (sender, e) =>
 			{
 				MessagingCenter.Send<ContentPage>(this, "Forget");
 			};
 
-			username = new Entry { Text = "" };
-			password = new Entry { Text = "" };
+			username = new Entry { Text = "admin@x8bit.com" };
+			password = new Entry { Text = "asdqwe123", IsPassword = true};
 			Content = new StackLayout {
 				Padding = new Thickness (10, 40, 10, 10),
 				Children = {

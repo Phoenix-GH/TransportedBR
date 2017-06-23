@@ -12,17 +12,17 @@ namespace LoginPattern
 
 		TableView tableView;
 		TableSection section;
-		public MenuPage ()
+
+		public MenuPage()
+		{
+			
+		}
+		public MenuPage (MasterDetailPage parent)
 		{
 			Title = "LoginPattern";
 			Icon = "slideout.png";
-
+			master = parent;
 			section = new TableSection () {
-				new TextCell {Text = "Sessions"},
-				new TextCell {Text = "Speakers"},
-				new TextCell {Text = "Favorites"},
-				new TextCell {Text = "Room Plan"},
-				new TextCell {Text = "Map"},
 			};
 
 			var root = new TableRoot () {section} ;
@@ -32,12 +32,25 @@ namespace LoginPattern
 				Root = root,
 				Intent = TableIntent.Menu,
 			};
+		}
 
+		protected override async void OnAppearing()
+		{
+			base.OnAppearing();
+			RestService service = new RestService();
+			var menuItems = await service.getMenu();
+
+			if (menuItems != null)
+			{
+				foreach (var item in menuItems)
+				{
+					section.Add(new TextCell { Text = item.name, Command = new Command(() => openDetails(item.model))});
+				}
+			}
 			var logoutButton = new Button { Text = "Logout" };
 			logoutButton.Clicked += (sender, e) => {
 				App.Current.Logout();
 			};
-
 			Content = new StackLayout {
 				BackgroundColor = Color.Gray,
 				VerticalOptions = LayoutOptions.FillAndExpand,
@@ -48,18 +61,11 @@ namespace LoginPattern
 			};
 		}
 
-		protected override async void OnAppearing()
+		void openDetails(string id)
 		{
-			base.OnAppearing();
-			RestService service = new RestService();
-			var menuItems = await service.getMenu();
-			//section.Clear();
-			if (menuItems != null)
+			if (master != null)
 			{
-				foreach (var item in menuItems)
-				{
-					section.Add(new TextCell { Text = item.name });
-				}
+				Navigation.PushAsync(new InfoPage(id));
 			}
 		}
 	}

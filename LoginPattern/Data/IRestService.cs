@@ -14,5 +14,6 @@ namespace LoginPattern
         Task<User> Login(Login user);
 
 		Task<IEnumerable<Menu>> getMenu();
+		Task<List<string>> getModels(string model);
 	}
 }
