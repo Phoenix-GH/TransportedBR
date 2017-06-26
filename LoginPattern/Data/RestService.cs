@@ -18,9 +18,6 @@ namespace LoginPattern
 
 		public RestService ()
 		{
-			//var authData = string.Format("{0}:{1}", Constants.Username, Constants.Password);
-			//var authHeaderValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(authData));
-
 			client = new HttpClient ();
 			client.BaseAddress = new Uri(Constants.RestUrl);
 			client.MaxResponseContentBufferSize = 2560000;
@@ -33,7 +30,6 @@ namespace LoginPattern
 			try
 			{
 				var json = JsonConvert.SerializeObject(user);
-
 				var content = new StringContent(json, Encoding.UTF8, "application/json");
 				HttpResponseMessage response = null;
 				response = await client.PostAsync(uri, content);		
@@ -44,7 +40,6 @@ namespace LoginPattern
 					App.user = JsonConvert.DeserializeObject<User>(result);
 					return App.user;
 				}
-
 			}
 			catch (Exception ex)
 			{
@@ -55,7 +50,8 @@ namespace LoginPattern
 
 		public async Task<IEnumerable<Menu>> getMenu()
 		{
-			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+			if(App.user.tokenLogin != null)
+				client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
 			menuItems = new List<Menu>();
 			var uri = new Uri(Constants.RestUrl + "menu");
 
@@ -64,7 +60,6 @@ namespace LoginPattern
 				if (response.IsSuccessStatusCode) {
 					var content = await response.Content.ReadAsStringAsync();
 					menuItems = JsonConvert.DeserializeObject<List<Menu>> (content);
-					Debug.WriteLine(menuItems);
 				}
 
 			} catch (Exception ex) {
@@ -75,10 +70,8 @@ namespace LoginPattern
 
 		public async Task<IEnumerable<Config>> getConfig()
 		{
-			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
 			var configItems = new List<Config>();
 			var uri = new Uri(Constants.RestUrl + "baseconfig");
-
 			try
 			{
 				var response = await client.GetAsync(uri);
@@ -88,7 +81,6 @@ namespace LoginPattern
 					configItems = JsonConvert.DeserializeObject<List<Config>>(content);
 					Debug.WriteLine(configItems);
 				}
-
 			}
 			catch (Exception ex)
 			{
@@ -97,21 +89,18 @@ namespace LoginPattern
 			return configItems;
 		}
 
-		public async Task<Dictionary<string,Object>> getModels(string model)
+		public async Task<List<Object>> getModels(string model)
 		{
-			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
-			var models = new Dictionary<string, Object>();
+			if(App.user.tokenLogin!=null)
+				client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+			var models = new List<Object>();
 			var uri = new Uri(Constants.RestUrl + model);
-
 			try {
 				var response = await client.GetAsync(uri);
 
 				if (response.IsSuccessStatusCode) {
 					var content = await response.Content.ReadAsStringAsync();
-
-					var objects = JsonConvert.DeserializeObject<List<Object>> (content);
-					models = JsonConvert.DeserializeObject<Dictionary<string, Object>> (objects[0].ToString());
-					Debug.WriteLine(models);
+					models = JsonConvert.DeserializeObject<List<Object>> (content);
 				}
 
 			} catch (Exception ex) {
@@ -120,12 +109,12 @@ namespace LoginPattern
 			return models;
 		}
 
-		public async Task<Dictionary<string, Object>> getModelInfo(string model)
+		public async Task<Dictionary<string,Object>> getModel(string model, string id)
 		{
-			client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
-			var models = new Dictionary<string, Object>();
-			var uri = new Uri(Constants.RestUrl + "base/modelinfo?model=" + model);
-
+			if (App.user.tokenLogin != null)
+				client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+			var modelData = new Dictionary<string,Object>();
+			var uri = new Uri(Constants.RestUrl + model+'/'+id);
 			try
 			{
 				var response = await client.GetAsync(uri);
@@ -133,8 +122,53 @@ namespace LoginPattern
 				if (response.IsSuccessStatusCode)
 				{
 					var content = await response.Content.ReadAsStringAsync();
+					modelData = JsonConvert.DeserializeObject<Dictionary<string,Object>>(content);
+				}
+
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(@"				ERROR {0}", ex.Message);
+			}
+			return modelData;
+		}
+
+		public async Task<Dictionary<string, Object>> deleteModel(string model, string id)
+		{
+			var modelData = new Dictionary<string, Object>();
+
+			var uri = new Uri(Constants.RestUrl + model + '/' + id);
+			try
+			{
+				var response = await client.DeleteAsync(uri);
+
+				if (response.IsSuccessStatusCode)
+				{
+					var content = await response.Content.ReadAsStringAsync();
+					modelData = JsonConvert.DeserializeObject<Dictionary<string, Object>>(content);
+				}
+
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(@"				ERROR {0}", ex.Message);
+			}
+			return modelData;
+		}
+
+		public async Task<Dictionary<string, Object>> getModelInfo(string model)
+		{
+			if(App.user.tokenLogin!=null)
+				client.DefaultRequestHeaders.Add("Authorization", App.user.tokenLogin);
+			var models = new Dictionary<string, Object>();
+			var uri = new Uri(Constants.RestUrl + "base/modelinfo?model=" + model);
+			try
+			{
+				var response = await client.GetAsync(uri);
+				if (response.IsSuccessStatusCode)
+				{
+					var content = await response.Content.ReadAsStringAsync();
 					models = JsonConvert.DeserializeObject<Dictionary<string, Object>>(content);
-					Debug.WriteLine(models);
 				}
 
 			}
@@ -157,11 +191,9 @@ namespace LoginPattern
 				if (response.IsSuccessStatusCode)
 				{
 					var result = await response.Content.ReadAsStringAsync();
-					Debug.WriteLine(result);
 					var formattedResult = JsonConvert.DeserializeObject<List<Dictionary<string,Object>>>(result);
 					return formattedResult;
 				}
-
 			}
 			catch (Exception ex)
 			{
@@ -170,5 +202,27 @@ namespace LoginPattern
 			return null;
 		}
 
+		public async Task<IEnumerable<Dictionary<string, Object>>> updateModels(string model, string json, string id)
+		{
+			var uri = new Uri(Constants.RestUrl + model+'/'+id);
+			try
+			{
+				var content = new StringContent(json, Encoding.UTF8, "application/json");
+				HttpResponseMessage response = null;
+				response = await client.PutAsync(uri, content);
+				if (response.IsSuccessStatusCode)
+				{
+					var result = await response.Content.ReadAsStringAsync();
+					Debug.WriteLine(result);
+					var formattedResult = JsonConvert.DeserializeObject<List<Dictionary<string, Object>>>(result);
+					return formattedResult;
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine(@"             ERROR {0}", ex.Message);
+			}
+			return null;
+		}
 	}
 }

@@ -8,6 +8,7 @@ namespace LoginPattern
 		static ILoginManager loginManager;
 		public static App Current;
 		public static User user;
+		public static Config config;
 		public App ()
 		{	
 			Current = this;
@@ -15,9 +16,9 @@ namespace LoginPattern
 			var isLoggedIn = Properties.ContainsKey("IsLoggedIn")?(bool)Properties ["IsLoggedIn"]:false;
 
 			// we remember if they're logged in, and only display the login page if they're not
-			if (isLoggedIn)
-				MainPage = new NavigationPage(new LoginPattern.MainPage ());
-			else
+			//if (isLoggedIn)
+			//	MainPage = new NavigationPage(new LoginPattern.MainPage ());
+			//else
 				MainPage = new NavigationPage(new LoginModalPage (this));
 		}
 

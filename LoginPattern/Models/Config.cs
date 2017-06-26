@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+
 namespace LoginPattern
 {
     public class Config
     {
-		public string logo { get; set; }
-		public string menuimage { get; set; }
-		public string background { get; set; }
+		public List<string> logo { get; set; }
+		public List<string> menuimage { get; set; }
+		public List<string> background { get; set; }
 		public string color { get; set; }
 		public string createdAt { get; set; }
 		public string updatedAt { get; set; }

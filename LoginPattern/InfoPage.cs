@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using Newtonsoft.Json;
 using Xamarin.Forms;
 
 namespace LoginPattern
@@ -26,7 +28,12 @@ namespace LoginPattern
 		}
 		void showDetailPage(string id)
 		{
-			Navigation.PushAsync(new QuestionPage(id));
+			Navigation.PushAsync(new NewModel(id));
+		}
+
+		void OnLabelClicked(string itemId)
+		{
+			Navigation.PushAsync(new EditModel(modelId, itemId));
 		}
 
 		protected async override void OnAppearing()
@@ -38,56 +45,67 @@ namespace LoginPattern
 			{
 				HorizontalOptions = LayoutOptions.Fill,
 				RowDefinitions = {
+
 					new RowDefinition { Height = GridLength.Auto },
-					new RowDefinition { Height = GridLength.Auto },
+					new RowDefinition {Height = GridLength.Auto}
 				}
 			};
 
-			int i = 0;
-			foreach (var item in models.Keys)
+			int i = 0, j = 1;
+			List<string> keyArray = new List<string>();
+			foreach (var modelItem in models)
 			{
-				grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-				grid.Children.Add(new Label(){Text = item.ToString(), BackgroundColor = Color.Gray, HorizontalOptions = LayoutOptions.FillAndExpand},i,0);
-				i++;
-			}
-			i = 0;
-			foreach (var item in models.Values)
-			{
-				if (item != null)
+				var model = JsonConvert.DeserializeObject<Dictionary<string, Object>>(modelItem.ToString());
+				//grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+				foreach (var item in model.Keys)
 				{
-					if (item.GetType() != typeof(Newtonsoft.Json.Linq.JObject))
+					
+					if (keyArray.IndexOf(item) == -1)
 					{
-						grid.Children.Add(new Label() { Text = item.ToString() }, i, 1);
-						Debug.WriteLine(item.GetType().ToString());
+						keyArray.Add(item);
+						grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+						grid.Children.Add(new Label() { Text = item.ToString(), BackgroundColor = Color.Gray, HorizontalOptions = LayoutOptions.FillAndExpand }, grid.ColumnDefinitions.Count - 1, 0);
+
 					}
 				}
-				i++;
 			}
-			FloatingActionButton floatingActionButton = new FloatingActionButton()
+
+			foreach (var modelItem in models)
 			{
-				HorizontalOptions = LayoutOptions.CenterAndExpand,
-				WidthRequest = 50,
-				HeightRequest = 50,
-				VerticalOptions = LayoutOptions.CenterAndExpand,
-				Image = "ic_add_white.png",
-				ButtonColor = Color.FromHex("03A9F4")
-			};
-			floatingActionButton.Clicked += FloatingActionButton_Clicked;
-			Content = new StackLayout
-			{
-				HorizontalOptions = LayoutOptions.Center,
-				Padding = new Thickness(5, 40, 5, 5),
-				Children = {
-					grid,
-					//floatingActionButton
+				i = 0;
+
+				var model = JsonConvert.DeserializeObject<Dictionary<string, Object>>(modelItem.ToString());
+
+				foreach (var item in keyArray)
+				{
+					if (model.ContainsKey(item))
+					{
+						
+						if (model[item] != null)
+						{
+							if (model[item].GetType() != typeof(Newtonsoft.Json.Linq.JObject))
+							{
+								Label label = new Label() { Text = model[item].ToString() };
+								grid.Children.Add(label, i, j);
+								label.GestureRecognizers.Add(new TapGestureRecognizer((View obj) => OnLabelClicked(model["id"].ToString())));
+
+							}
+						}
+
+					}
+					i++;
 				}
+				j++;
+
+			}
+
+			Content = new ScrollView
+				{
+					HorizontalOptions = LayoutOptions.FillAndExpand,
+					Padding = new Thickness(5, 40, 5, 5),
+				Content = grid
 			};
 		}
-
-		void FloatingActionButton_Clicked(object sender, EventArgs e)
-		{
-
-		}
-	}
+	}						                              
 }
 

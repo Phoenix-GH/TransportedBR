@@ -6,27 +6,29 @@ using Xamarin.Forms;
 
 namespace LoginPattern
 {
-	public class QuestionPage : ContentPage
+	public class NewModel : ContentPage
 	{
-		string modelId;
+		string modelId, updateId;
 		Dictionary<string,Object> models;
-		RestService restService; 
-		public QuestionPage()
+		RestService restService;
+		Dictionary<string, Object> newModel;
+
+		public NewModel()
 		{
 		}
 
-		public QuestionPage(string id)
+		public NewModel(string id)
 		{
 			modelId = id;
 			restService = new RestService();
+			newModel = new Dictionary<string, Object>();
 		}
-
 
 		protected async override void OnAppearing()
 		{
 			base.OnAppearing();
 			models = await restService.getModelInfo(modelId);
-			//Debug.WriteLine(models.Keys.ToString());
+
 			var layout = new StackLayout
 			{
 				HorizontalOptions = LayoutOptions.FillAndExpand,
@@ -39,10 +41,12 @@ namespace LoginPattern
 			{
 				if (!(kvp.Key.ToString().Equals("id") || kvp.Key.ToString().Equals("createdAt") || kvp.Key.ToString().Equals("updatedAt")))
 				{
-					layout.Children.Add(new Label() { Text = kvp.Key.ToString() });
+					
 					var values = JsonConvert.DeserializeObject<Dictionary<string, Object>>(kvp.Value.ToString());
 					if (values != null)
 					{
+						layout.Children.Add(new Label() { Text = kvp.Key.ToString() });
+
 						if (values.ContainsKey("x8bit"))
 						{
 							var x8bit = values["x8bit"];
@@ -56,22 +60,25 @@ namespace LoginPattern
 							if (detailValues.ContainsKey("column"))
 							{
 								var picker = new Picker();
-								layout.Children.Add(new Picker());
 								var columnData = JsonConvert.DeserializeObject<Dictionary<string, Object>>(detailValues["column"].ToString());
 								if (columnData.ContainsKey("values"))
 								{
 									var valuesData = JsonConvert.DeserializeObject<Dictionary<string, string>>(columnData["values"].ToString());
 									foreach (var item in valuesData)
-									{
 										picker.Items.Add(item.Value.ToString());
-									}
+
 								}
+								layout.Children.Add(picker);
+								newModel.Add(kvp.Key, picker);
 							}
 							else
 							{
-								layout.Children.Add(new Entry() { Text = title });
+								var entry = new Entry() { Text = title };
+								layout.Children.Add(entry);
+								newModel.Add(kvp.Key, entry);
 							}
 						}
+
 					}
 				}
 			}
@@ -84,9 +91,27 @@ namespace LoginPattern
 
 		async void BtnSend_Clicked(object sender, EventArgs e)
 		{
-			var json = JsonConvert.SerializeObject(models);
-			Debug.WriteLine(json);
-			await restService.postModels(modelId, json);
+			var jsonObject = new Dictionary<string, string>();
+			foreach (var item in newModel)
+			{
+				string dataValue="";
+				if (item.Value.GetType() == typeof(Entry))
+					dataValue = ((Entry)item.Value).Text;
+				else if (item.Value.GetType() == typeof(Picker))
+				{
+					Picker pickerObj = (Picker)item.Value;
+					if(pickerObj.Items[pickerObj.SelectedIndex]!=null)
+						dataValue = pickerObj.Items[pickerObj.SelectedIndex];
+				}
+				jsonObject.Add(item.Key, dataValue);
+			}
+			var json = JsonConvert.SerializeObject(jsonObject);
+			var result = await restService.postModels(modelId, json);
+			if (result != null)
+			{
+				await DisplayAlert("Success", "The new record has been successfully created.", "OK");
+				await Navigation.PopAsync(true);
+			}
 		}
 	}
 }

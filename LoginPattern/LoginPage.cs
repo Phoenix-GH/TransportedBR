@@ -1,21 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 using Xamarin.Forms;
 
 namespace LoginPattern
 {
 	public class LoginPage : ContentPage
 	{
+		RestService service;
 		Entry username, password;
+		Image logoImage;
 		public LoginPage (ILoginManager ilm)
 		{
 			var button = new Button { Text = "Login" };
+			service = new RestService();
+			logoImage = new Image();
 			button.Clicked += async (sender, e) => {
 				if (String.IsNullOrEmpty(username.Text) || String.IsNullOrEmpty(password.Text))
 				{
 					await DisplayAlert("Validation Error", "Username and Password are required", "Re-try");
-				} else {
-                    // REMEMBER LOGIN STATUS!
-                    RestService service = new RestService();
+				} else{
+                    
                     Login user = new Login();
                     user.email = username.Text;
                     user.password = password.Text;
@@ -24,6 +28,7 @@ namespace LoginPattern
 					{
 						App.Current.Properties["IsLoggedIn"] = true;
 						App.user = result;
+
 						ilm.ShowMainPage();
 					}
 					else
@@ -48,6 +53,7 @@ namespace LoginPattern
 			Content = new StackLayout {
 				Padding = new Thickness (10, 40, 10, 10),
 				Children = {
+					new Image(){},
 					new Label { Text = "Login", FontSize = Device.GetNamedSize(NamedSize.Large, typeof(Label)) }, 
 					new Label { Text = "Username" },
 					username,
@@ -56,6 +62,29 @@ namespace LoginPattern
 					button, create, forget
 				}
 			};
+		}
+		protected async override void OnAppearing()
+		{
+			base.OnAppearing();
+			//var configs = await service.getConfig();
+
+			//if (configs != null)
+			//{
+			//	foreach (var item in configs)
+			//	{
+			//		if (item != null)
+			//		{
+			//			App.config = item;
+			//			break;
+			//		}
+			//	}
+			//}
+
+			//if (App.config.logo != null)
+			//{
+			//	if(App.config.logo.Count > 0)
+			//		logoImage.Source = ImageSource.FromUri(new Uri(App.config.logo[0]));
+			//}
 		}
 	}
 }
